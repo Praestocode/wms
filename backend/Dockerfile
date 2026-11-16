@@ -14,7 +14,11 @@ RUN echo "session.upload_progress.enabled=0" > /usr/local/etc/php/conf.d/zz-secu
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+RUN groupadd -g 1000 app && useradd -u 1000 -g 1000 -m -s /bin/bash app
+
 WORKDIR /var/www/html
+
+USER app
 
 EXPOSE 8000
 
