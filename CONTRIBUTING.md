@@ -34,9 +34,7 @@ One commit is one complete logical unit. If the description needs an "and", it i
 
 For non-trivial commits, a blank line after the title followed by a body explaining why the change was made — the what is readable from the diff.
 
-## Daily loop
-
-All commands run inside the containers. Service names are the ones declared in `docker-compose.yml`: `backend`, `frontend`, `mysql`.
+## Workflow
 
 1. Pull the current branch.
 2. Write code.
@@ -45,7 +43,11 @@ All commands run inside the containers. Service names are the ones declared in `
 5. Verify in non-destructive mode.
 6. Commit.
 
+Before every push, run the non-destructive verification on both sides. A failing linter is never committed.
+
 ## Commands
+
+All commands run inside the containers. Service names are the ones declared in `docker-compose.yml`: `backend`, `frontend`, `mysql`.
 
 Backend (PHP, Laravel):
 
@@ -58,24 +60,14 @@ Frontend (TypeScript, React):
     docker compose exec frontend npm run format:check
     docker compose exec frontend npm run lint
 
-## When each step runs
-
-- Before every commit: format the touched files, then lint, then verify.
-- Before every push: verify both sides in non-destructive mode.
-- Never commit with a failing linter.
-
 ## Code style
 
 - Style-only changes go in their own commit, never mixed with behaviour.
 - `backend/pint.json`, `frontend/eslint.config.js` and `frontend/.prettierrc` are the single source of truth. Editor settings must not override them.
 - PHP files declare strict types; Pint adds the declaration.
 
-## Editor
-
-The client is edited from inside its container, through the Dev Containers extension and `.devcontainer/devcontainer.json`: the TypeScript server needs the dependencies, which live in the container volume and are not visible on the host. Git runs on the host, since the container only mounts `frontend/`.
-
 ## Docker notes
 
-- Frontend dependencies are installed inside the container: `docker compose exec frontend npm install -D <package>`. Installing from the host puts them where the container cannot see them.
+- The container keeps its own `node_modules` in a Docker volume, which is not visible from the host. Frontend dependencies are therefore installed on both sides: inside the container, which runs the dev server, and in `frontend/` on the host, where editors read them for type information.
 - After rebuilding the frontend image, recreate the anonymous volume that holds `node_modules`, otherwise the container keeps the old one: `docker compose up -d --build --renew-anon-volumes`.
 - The production Dockerfile, still to be written, uses `npm ci` instead of `npm install`, so builds install the versions locked in `package-lock.json`.
